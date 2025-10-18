@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<title>GPX 編輯與下載工具</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<style>
+  body { font-family: sans-serif; max-width: 900px; margin: 20px auto; }
+  #map { height: 400px; margin-top: 15px; border-radius: 8px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+  input[type=text] { width: 95%; }
+  button { margin: 5px; padding: 6px 12px; }
+  #downloadBtn { background-color: #4CAF50; color: white; }
+</style>
+</head>
+<body>
+<h2>GPX 點位編輯器（含地圖預覽）</h2>
+
+<div>
+  <label>名稱：</label>
+  <input type="text" id="nameInput" placeholder="例如：榕樹旁的石頭">
+  <label>經緯度：</label>
+  <input type="text" id="coordInput" placeholder="24.018417,120.493877">
+  <button onclick="addPoint()">新增點位</button>
+</div>
+
+<div id="map"></div>
+
+<table id="pointTable">
+  <thead>
+    <tr><th>名稱</th><th>經緯度</th><th>操作</th></tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+let points = [];
+let map = L.map('map').setView([23.9739, 120.9820], 7); // 台灣中心點
+let markers = [];
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '&copy; OpenStreetMap 貢獻者'
+}).addTo(map);
+
+// 新增點位
+function addPoint() {
+  const name = document.getElementById('nameInput').value.trim();
+  const coord = document.getElementById('coordInput').value.trim();
+
+  if (!name || !coord) return alert("請輸入完整資訊");
+
+  const [lat, lon] = coord.split(',').map(x => x.trim());
+  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return alert("請輸入有效的經緯度（格式：緯度,經度）");
+
+  points.push({ name, lat, lon });
+  renderTable();
+  renderMarkers();
+
+  document.getElementById('nameInput').value = '';
+  document.getElementById('coordInput').value = '';
+}
+
+// 顯示表格
+function renderTable() {
+  const tbody = document.querySelector('#pointTable tbody');
+  tbody.innerHTML = '';
+
+  points.forEach((p, i) => {
+    const row = document.createElement('tr');
+    const coordText = `${p.lat},${p.lon}`;
+
+    row.innerHTML = `
+      <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
+      <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
+      <td><button onclick="deletePoint(${i})">刪除</button></td>
+    `;
+
+    tbody.appendChild(row);
+  });
+}
+
+// 更新名稱
+function updatePoint(index, key, value) {
+  points[index][key] = value.trim();
+  renderMarkers();
+}
+
+// 更新經緯度
+function updateCoord(index, value) {
+  const [lat, lon] = value.split(',').map(x => x.trim());
+  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
+  points[index].lat = lat;
+  points[index].lon = lon;
+  renderMarkers();
+}
+
+// 刪除資料
+function deletePoint(index) {
+  if (confirm("確定要刪除此點嗎？")) {
+    points.splice(index, 1);
+    renderTable();
+    renderMarkers();
+  }
+}
+
+// 顯示地圖標記
+function renderMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
+
+  if (points.length === 0) return;
+
+  const bounds = [];
+  points.forEach(p => {
+    const marker = L.marker([p.lat, p.lon])
+      .bindPopup(`<b>${p.name}</b><br>${p.lat},${p.lon}`)
+      .addTo(map);
+    markers.push(marker);
+    bounds.push([p.lat, p.lon]);
+  });
+
+  if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50] });
+}
+
+// 下載 GPX
+function downloadGPX() {
+  if (points.length === 0) return alert("沒有資料可以下載");
+
+  let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GPX Editor" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+
+  points.forEach(p => {
+    gpx += `  <wpt lat="${p.lat}" lon="${p.lon}"><name><![CDATA[${p.name}]]></name></wpt>\n`;
+  });
+
+  gpx += `</gpx>`;
+
+  const blob = new Blob([gpx], { type: "application/gpx+xml" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "points.gpx";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
