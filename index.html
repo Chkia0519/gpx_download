@@ -15,11 +15,12 @@
 </style>
 </head>
 <body>
-<h2>GPX 點位編輯器（含地圖預覽）</h2>
+<h2>GPX 點位編輯器</h2>
 
 <div>
   <label>名稱：</label>
   <input type="text" id="nameInput" placeholder="例如：榕樹旁的石頭">
+  /n
   <label>經緯度：</label>
   <input type="text" id="coordInput" placeholder="24.018417,120.493877">
   <button onclick="addPoint()">新增點位</button>
@@ -54,7 +55,7 @@ function addPoint() {
   if (!name || !coord) return alert("請輸入完整資訊");
 
   const [lat, lon] = coord.split(',').map(x => x.trim());
-  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return alert("請輸入有效的經緯度（格式：緯度,經度）");
+  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return alert("請輸入正確的格式（格式：緯度,經度 *逗點後不可以有空格）");
 
   points.push({ name, lat, lon });
   renderTable();
@@ -100,7 +101,7 @@ function updateCoord(index, value) {
 
 // 刪除資料
 function deletePoint(index) {
-  if (confirm("確定要刪除此點嗎？")) {
+  if (confirm("確定要刪除這個點嗎？")) {
     points.splice(index, 1);
     renderTable();
     renderMarkers();
@@ -130,7 +131,7 @@ function renderMarkers() {
 function downloadGPX() {
   if (points.length === 0) return alert("沒有資料可以下載");
 
-  let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="GPX Editor" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+  let gpx = `<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<gpx version="1.1" creator="GPX Editor" xmlns="http://www.topografix.com/GPX/1/1">\n`;
 
   points.forEach(p => {
     gpx += `  <wpt lat="${p.lat}" lon="${p.lon}"><name><![CDATA[${p.name}]]></name></wpt>\n`;
