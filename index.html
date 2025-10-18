@@ -34,7 +34,12 @@
   </thead>
   <tbody></tbody>
 </table>
-
+  
+<div id="gpxname">
+  <label>檔案名稱：</label>
+  <input type="text" id="gpxnameInput" placeholder="請輸入檔名">
+</div>
+  
 <button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -130,6 +135,11 @@ function renderMarkers() {
 // 下載 GPX
 function downloadGPX() {
   if (points.length === 0) return alert("沒有資料可以下載");
+  
+    // 取得使用者輸入的檔名
+  let filename = document.getElementById('gpxnameInput').value.trim();
+  if (!filename) filename = "points"; // 預設檔名
+  if (!filename.toLowerCase().endsWith('.gpx')) filename += '.gpx'; // 自動補上副檔名
 
   let gpx = `<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<gpx version="1.1" creator="GPX Editor" xmlns="http://www.topografix.com/GPX/1/1">\n`;
 
@@ -143,7 +153,7 @@ function downloadGPX() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "points.gpx";
+  a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
 }
