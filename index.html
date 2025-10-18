@@ -9,7 +9,9 @@
   #map { height: 400px; margin-top: 15px; border-radius: 8px; }
   table { width: 100%; border-collapse: collapse; margin-top: 10px; }
   th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-  input[type=text] { width: 95%; }
+  input[id="nameInput"] { width: 35%; }
+  input[id="coordInput"] { width: 30%; }
+  input[id="gpxnameInput"] { width: 30%; }
   button { margin: 5px; padding: 6px 12px; }
   #downloadBtn { background-color: #4CAF50; color: white; }
 </style>
@@ -38,9 +40,9 @@
 <div id="gpxname">
   <label>檔案名稱：</label>
   <input type="text" id="gpxnameInput" placeholder="請輸入檔名">
+  <button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
 </div>
-  
-<button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
+
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
