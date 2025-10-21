@@ -1,0 +1,34 @@
+body {
+  font-family: "Noto Sans TC", sans-serif;
+  max-width: 900px;
+  margin: 20px auto;
+  background-color: #fafafa;
+  color: #333;
+}
+
+/* 其他設定 */
+#map {
+  height: 400px;
+  margin-top: 15px;
+  border-radius: 8px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+button:hover {
+  background-color: #0056b3;
+}
+
+/* RWD */
+@media (max-width: 600px) {
+  #map {
+    height: 300px;
+  }
+}
