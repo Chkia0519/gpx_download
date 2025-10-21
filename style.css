@@ -1,10 +1,10 @@
-th,td{
+#pointTable th,td{
     border: 1px solid #000;
     padding: 6px;
     text-align: center;
 }
 
-table {
+#pointTable {
     margin-top: 10px;
     border-collapse: collapse;
     width: 100%;
