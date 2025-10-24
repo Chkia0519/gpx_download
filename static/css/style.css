@@ -12,7 +12,8 @@
 
 
 #nameInput,
-#coordInput{
+#coordInput,
+#gpxnameInput{
   width: 100%;      /* 填滿父容器寬度 */
   max-width: 500px; /* 最大寬度限制 */
   padding: 8px;
@@ -100,6 +101,8 @@ button:hover {
     height: 70PX;
     display: block;
 	}
-#nameInput {
+#nameInput,
+#coordInput,
+#gpxnameInput{
     width: 90%;
 }
