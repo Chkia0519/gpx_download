@@ -87,4 +87,8 @@ button:hover {
   #map {
     height: 300px;
   }
+#biglogo {
+    height: 70PX;
+    display: block;
+	}
 }
