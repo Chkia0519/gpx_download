@@ -1,4 +1,7 @@
-#leftbanner{
+#banner{
+	height : 100px;
+}
+.leftbanner{
   float: left;
 	margin-left: 5%;
 	width:10%;
