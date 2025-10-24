@@ -58,12 +58,21 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // 新增點位
 function addPoint() {
   const name = document.getElementById('nameInput').value.trim();
-  const coord = document.getElementById('coordInput').value.trim();
+  let coord = document.getElementById('coordInput').value.trim();
 
   if (!name || !coord) return alert("請輸入完整資訊");
 
+  // 🔹 自動清理輸入內容
+  coord = coord
+    .replace(/[()（）]/g, "") // 去除括號
+    .replace(/，/g, ",")       // 全形逗號換成半形
+    .replace(/\s+/g, "");      // 移除所有空白
+
   const [lat, lon] = coord.split(',').map(x => x.trim());
-  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return alert("請輸入正確的格式（格式：緯度,經度 *逗點後不可以有空格）");
+
+  if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
+    return alert("請輸入正確格式，例如：24.018417,120.493877");
+  }
 
   points.push({ name, lat, lon });
   renderTable();
