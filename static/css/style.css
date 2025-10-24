@@ -15,7 +15,7 @@ body {
   font-family: "Noto Sans TC", sans-serif;
   max-width: 900px;
   margin: 20px auto;
-  background-color: #fafafa;
+  background-color: rgba(250, 250, 250, 0.8); /* 0.8 是透明度，0 完全透明 */
   color: #333;
 }
 
