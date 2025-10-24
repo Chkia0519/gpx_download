@@ -1,8 +1,7 @@
 #biglogo{
 	height : 100px;
 	display: block;
-  	margin-left: 0;  /* 靠左 */
-  	margin-right: auto; /* 自動推右邊空白 */
+  	margin: 0;  /* 靠左 */
 }
 
 #pointTable th,
@@ -28,7 +27,6 @@
   }
 
 h2 {
-  margin-top: 100px;
   background-color: rgba(255, 255, 255, 0.8); /* 半透明白色 */
   padding: 20px;
   border-radius: 10px; /* 可選：圓角 */
