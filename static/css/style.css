@@ -1,3 +1,9 @@
+.leftbanner{
+  float: left;
+	margin-left: 5%;
+	width:10%;
+}
+
 #pointTable th,
 #pointTable td {
   border: 1px solid #000;
