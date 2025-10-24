@@ -1,10 +1,11 @@
 #banner{
 	height : 100px;
 }
-.leftbanner{
-  float: left;
-	margin-left: 5%;
-	width:10%;
+#biglogo{
+	height : 100px;
+	display: block;
+  	margin-left: 0;  /* 靠左 */
+  	margin-right: auto; /* 自動推右邊空白 */
 }
 
 #pointTable th,
