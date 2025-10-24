@@ -13,11 +13,7 @@
     padding: 20px;
     border-radius: 10px; /* 可選：圓角 */
 }
-#nameloco{
-  background-color: rgba(255, 255, 255, 0.8); /* 半透明白色 */
-  padding: 20px;
-  border-radius: 10px; /* 可選：圓角 */
-  }
+#nameloco,
 #gpxname{
   background-color: rgba(255, 255, 255, 0.8); /* 半透明白色 */
   padding: 20px;
