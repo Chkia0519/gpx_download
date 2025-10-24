@@ -1,7 +1,13 @@
+.leftbanner {
+  display: flex;
+  justify-content: flex-start; /* 靠左 */
+  align-items: center;         /* 垂直置中 */
+}
+
+
 #biglogo{
 	height : 100px;
 	display: block;
-  	margin: 0;  /* 靠左 */
 }
 
 #pointTable th,
