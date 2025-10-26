@@ -42,6 +42,16 @@
   border-radius: 10px; /* 圓角 */
   }
 
+
+#mapControls {
+  
+    background-color: rgba(255, 255, 255, 0.8); /* 半透明 */
+    padding: 20px;
+    border-radius: 10px; /* 圓角 */
+    margin-top: 15PX;
+
+  }
+
 h2 {
   margin-top: 25PX;
   background-color: rgba(255, 255, 255, 0.8); /* 半透明 */
