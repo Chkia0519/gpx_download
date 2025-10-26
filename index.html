@@ -9,70 +9,84 @@
   <link rel="stylesheet" href="static/css/style.css">
 </head>
 
-
 <body>
-
   <div id="banner">
-   <div class="leftbanner">
-      <a href="https://store.pikminbloom.com/zh-Hant"><img id="biglogo" src='static/images/logo.png' alt='皮克敏大logo'></a>
+    <div class="leftbanner">
+      <a href="https://store.pikminbloom.com/zh-Hant">
+        <img id="biglogo" src='static/images/logo.png' alt='皮克敏大logo'>
+      </a>
     </div>
   </div>
   
-<h2>GPX 點位編輯器</h2>
+  <h2>GPX 點位編輯器</h2>
 
-<div id="nameloco">
-  <label>名稱：</label>
-  <input type="text" id="nameInput" placeholder="例如：台中消波塊">
-  <br>
-  <label>經緯度：</label>
-  <input type="text" id="coordInput" placeholder="24.018417,120.493877">
-  <button onclick="addPoint()">新增點位</button>
+  <div id="nameloco">
+    <label>名稱：</label>
+    <input type="text" id="nameInput" placeholder="例如：台中消波塊">
+    <br>
+    <label>經緯度：</label>
+    <input type="text" id="coordInput" placeholder="24.018417,120.493877">
+    <button onclick="addPoint()">新增點位</button>
+  </div>
+
+  <div id="mapControls">
+  <label>
+    <input type="checkbox" id="showLineCheckbox" onchange="toggleLine()"> 顯示點位連線
+  </label>
 </div>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<table id="pointTable">
-  <thead>
-    <tr><th>名稱</th><th>經緯度</th><th>操作</th></tr>
-  </thead>
-  <tbody></tbody>
-</table>
+  <table id="pointTable">
+    <thead>
+      <tr><th>名稱</th><th>經緯度</th><th>操作</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+    
+  <div id="gpxname">
+    <label>檔案名稱：</label>
+    <input type="text" id="gpxnameInput" placeholder="請輸入檔名">
+    <button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
+  </div>
+
   
-<div id="gpxname">
-  <label>檔案名稱：</label>
-  <input type="text" id="gpxnameInput" placeholder="請輸入檔名">
-  <button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
-</div>
 
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+  let points = [];
+  let markers = [];
+  let tempMarker = null; // 暫時標記
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
-let points = [];
-let map = L.map('map').setView([23.9739, 120.9820], 7); // 台灣中心點
-let markers = [];
+  // 初始化地圖
+  let map = L.map('map').setView([23.9739, 120.9820], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap 貢獻者'
+  }).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap 貢獻者'
-}).addTo(map);
+  // 點擊地圖 → 顯示暫時標記 + 填入座標
+  map.on('click', function(e) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lon = e.latlng.lng.toFixed(6);
+    document.getElementById('coordInput').value = `${lat},${lon}`;
 
-// 新增點位
+    if (tempMarker) map.removeLayer(tempMarker);
+    tempMarker = L.marker([lat, lon]).addTo(map)
+      .bindPopup(`暫時標記<br>${lat}, ${lon}`)
+      .openPopup();
+  });
+
+  // 新增點位
 function addPoint() {
   const name = document.getElementById('nameInput').value.trim();
   let coord = document.getElementById('coordInput').value.trim();
 
   if (!name || !coord) return alert("請輸入完整資訊");
 
-  // 🔹 自動清理輸入內容
-  coord = coord
-    .replace(/[()（）]/g, "") // 去除括號
-    .replace(/，/g, ",")       // 全形逗號換成半形
-    .replace(/\s+/g, "");      // 移除所有空白
-
+  coord = coord.replace(/[()（）]/g, "").replace(/，/g, ",").replace(/\s+/g, "");
   const [lat, lon] = coord.split(',').map(x => x.trim());
-
-  if (!lat || !lon || isNaN(lat) || isNaN(lon)) {
-    return alert("請輸入正確格式，例如：24.018417,120.493877");
-  }
+  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return alert("請輸入正確格式，例如：24.018417,120.493877");
 
   points.push({ name, lat, lon });
   renderTable();
@@ -80,52 +94,75 @@ function addPoint() {
 
   document.getElementById('nameInput').value = '';
   document.getElementById('coordInput').value = '';
-}
 
-// 顯示表格
-function renderTable() {
-  const tbody = document.querySelector('#pointTable tbody');
-  tbody.innerHTML = '';
-
-  points.forEach((p, i) => {
-    const row = document.createElement('tr');
-    const coordText = `${p.lat},${p.lon}`;
-
-    row.innerHTML = `
-      <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
-      <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
-      <td><button onclick="deletePoint(${i})">刪除</button></td>
-    `;
-
-    tbody.appendChild(row);
-  });
-}
-
-// 更新名稱
-function updatePoint(index, key, value) {
-  points[index][key] = value.trim();
-  renderMarkers();
-}
-
-// 更新經緯度
-function updateCoord(index, value) {
-  const [lat, lon] = value.split(',').map(x => x.trim());
-  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
-  points[index].lat = lat;
-  points[index].lon = lon;
-  renderMarkers();
-}
-
-// 刪除資料
-function deletePoint(index) {
-  if (confirm("確定要刪除這個點嗎？")) {
-    points.splice(index, 1);
-    renderTable();
-    renderMarkers();
+  // ✅ 新增這段：如果目前有勾選顯示線，新增點後自動更新線
+  if (document.getElementById('showLineCheckbox')?.checked) {
+    drawLine();
   }
 }
 
-// 顯示地圖標記
+  // 顯示表格
+  function renderTable() {
+    const tbody = document.querySelector('#pointTable tbody');
+    tbody.innerHTML = '';
+
+    points.forEach((p, i) => {
+      const coordText = `${p.lat},${p.lon}`;
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
+        <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
+        <td>
+          <button onclick="editCoord(${i})">修改座標</button>
+          <button onclick="deletePoint(${i})">刪除</button>
+        </td>
+      `;
+      tbody.appendChild(row);
+    });
+  }
+
+  // 更新名稱
+  function updatePoint(index, key, value) {
+    points[index][key] = value.trim();
+    renderMarkers();
+  }
+
+  // 更新經緯度
+  function updateCoord(index, value) {
+    const [lat, lon] = value.split(',').map(x => x.trim());
+    if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
+    points[index].lat = lat;
+    points[index].lon = lon;
+    renderMarkers();
+  }
+
+  // 修改座標按鈕 → 可輸入新座標
+function editCoord(index) {
+  const marker = markers[index];
+  if (!marker) return;
+  if (document.getElementById('showLineCheckbox').checked) drawLine();
+
+
+  // 啟用拖曳
+  marker.dragging.enable();
+  marker.openPopup();
+  alert("請拖曳地圖上的標記修改座標，拖曳完成後會自動鎖定。");
+}
+
+
+  // 刪除資料
+  function deletePoint(index) {
+    if (confirm("確定要刪除這個點嗎？")) {
+      points.splice(index, 1);
+      renderTable();
+      renderMarkers();
+    }
+
+    if (document.getElementById('showLineCheckbox')?.checked) {
+         drawLine();}
+  }
+
+  // 顯示地圖標記
 function renderMarkers() {
   markers.forEach(m => map.removeLayer(m));
   markers = [];
@@ -133,10 +170,28 @@ function renderMarkers() {
   if (points.length === 0) return;
 
   const bounds = [];
-  points.forEach(p => {
-    const marker = L.marker([p.lat, p.lon])
+  points.forEach((p, i) => {
+    const marker = L.marker([p.lat, p.lon], { draggable: false })
       .bindPopup(`<b>${p.name}</b><br>${p.lat},${p.lon}`)
       .addTo(map);
+
+    // 🔹 這裡加上拖曳事件
+    marker.on('dragend', function(e) {
+      const latlng = e.target.getLatLng();
+      points[i].lat = latlng.lat.toFixed(6);
+      points[i].lon = latlng.lng.toFixed(6);
+
+      renderTable(); // 更新表格
+      marker.getPopup().setContent(`<b>${points[i].name}</b><br>${points[i].lat},${points[i].lon}`);
+
+      marker.dragging.disable(); // 拖曳結束後鎖定
+
+      // ✅ 如果目前有勾選顯示連線，拖曳後自動更新線
+      if (document.getElementById('showLineCheckbox')?.checked) {
+        drawLine();
+      }
+    });
+
     markers.push(marker);
     bounds.push([p.lat, p.lon]);
   });
@@ -144,31 +199,55 @@ function renderMarkers() {
   if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50] });
 }
 
-// 下載 GPX
-function downloadGPX() {
-  if (points.length === 0) return alert("沒有資料可以下載");
-  
-    // 取得使用者輸入的檔名
-  let filename = document.getElementById('gpxnameInput').value.trim();
-  if (!filename) filename = "points"; // 預設檔名
-  if (!filename.toLowerCase().endsWith('.gpx')) filename += '.gpx'; // 自動補上副檔名
+let polyline = null; // 存放連線圖層
 
-  let gpx = `<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<gpx version="1.1" creator="GPX Editor" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+// 顯示或隱藏連線
+function toggleLine() {
+  const checked = document.getElementById('showLineCheckbox').checked;
 
-  points.forEach(p => {
-    gpx += `  <wpt lat="${p.lat}" lon="${p.lon}"><name><![CDATA[${p.name}]]></name></wpt>\n`;
-  });
-
-  gpx += `</gpx>`;
-
-  const blob = new Blob([gpx], { type: "application/gpx+xml" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
+  if (checked) {
+    drawLine();
+  } else {
+    if (polyline) {
+      map.removeLayer(polyline);
+      polyline = null;
+    }
+  }
 }
-</script>
+
+// 畫線
+function drawLine() {
+  if (polyline) map.removeLayer(polyline);
+
+  if (points.length < 2) return; // 少於兩點無法連線
+
+  const latlngs = points.map(p => [p.lat, p.lon]);
+  polyline = L.polyline(latlngs, { color: 'red', weight: 3 }).addTo(map);
+}
+
+
+  // 下載 GPX
+  function downloadGPX() {
+    if (points.length === 0) return alert("沒有資料可以下載");
+    
+    let filename = document.getElementById('gpxnameInput').value.trim();
+    if (!filename) filename = "points";
+    if (!filename.toLowerCase().endsWith('.gpx')) filename += '.gpx';
+
+    let gpx = `<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<gpx version="1.1" creator="GPX Editor" xmlns="http://www.topografix.com/GPX/1/1">\n`;
+    points.forEach(p => {
+      gpx += `  <wpt lat="${p.lat}" lon="${p.lon}"><name><![CDATA[${p.name}]]></name></wpt>\n`;
+    });
+    gpx += `</gpx>`;
+
+    const blob = new Blob([gpx], { type: "application/gpx+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  </script>
 </body>
 </html>
