@@ -44,16 +44,21 @@
 
 
 #mapControls {
-  
-    background-color: rgba(255, 255, 255, 0.8); /* 半透明 */
-    padding: 20px;
-    border-radius: 10px; /* 圓角 */
-    margin-top: 15PX;
+      display: flex;
+      justify-content: space-between; /* 左右分散對齊 */
+      align-items: center;             /* 垂直置中 */
+      width: 100%;
+      padding: 5px 10px;
+      background-color: rgba(255, 255, 255, 0.8); /* 半透明 */
+      border-radius: 10px; /* 圓角 */
+      margin-top: 15PX;
 
   }
 
-#tips{
-  margin-right: 25PX;
+#tips {
+  font-size: 14px;
+  color: #555;
+  font-weight: normal;
 }
 
 h2 {
