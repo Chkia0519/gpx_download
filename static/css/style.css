@@ -44,21 +44,29 @@
 
 
 #mapControls {
-      display: flex;
-      justify-content: space-between; /* 左右分散對齊 */
-      align-items: center;             /* 垂直置中 */
-      width: 100%;
-      padding: 5px 10px;
-      background-color: rgba(255, 255, 255, 0.8); /* 半透明 */
-      border-radius: 10px; /* 圓角 */
-      margin-top: 15PX;
+  display: flex;
+  justify-content: space-between; /* 左右分散對齊 */
+  align-items: center;            /* 垂直置中 */
+  width: 100%;
+  padding: 8px 12px;
+  background-color: rgba(255, 255, 255, 0.8); /* 半透明底色 */
+  border-radius: 10px;
+  margin-top: 15px;
+  box-sizing: border-box; /* 避免寬度溢出 */
+}
 
-  }
+/* 左邊的 label（勾選框） */
+#mapControls label {
+  display: flex;
+  align-items: center;
+  gap: 5px; /* checkbox 和文字間距 */
+  font-size: 15px;
+  color: #333;
+}
 
 #tips {
-  font-size: 14px;
   color: #960000;
-  font-weight: normal;
+  text-align: right;
 }
 
 h2 {
