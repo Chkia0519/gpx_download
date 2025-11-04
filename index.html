@@ -55,199 +55,124 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-  let points = [];
-  let markers = [];
-  let tempMarker = null; // 暫時標記
+  let map;
+let points = [];
+let markers = [];
+let tempMarker = null;
+let firstAdd = true;
+let pointCount = 0;
 
-  // 初始化地圖
-  let map = L.map('map').setView([23.9739, 120.9820], 7);
+// 初始化地圖
+function initMap() {
+  map = L.map('map').setView([23.6978, 120.9605], 7);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '&copy; OpenStreetMap 貢獻者'
   }).addTo(map);
 
-  // 點擊地圖 → 顯示暫時標記 + 填入座標
-  map.on('click', function(e) {
-    const lat = e.latlng.lat.toFixed(6);
-    const lon = e.latlng.lng.toFixed(6);
-    document.getElementById('coordInput').value = `${lat},${lon}`;
+  const tips = document.getElementById("tips");
+  tips.style.display = "none";
+
+  // 點擊地圖：顯示暫時標記與提示
+  map.on('click', (e) => {
+    const { lat, lng } = e.latlng;
 
     if (tempMarker) map.removeLayer(tempMarker);
-    tempMarker = L.marker([lat, lon]).addTo(map)
-      .bindPopup(`暫時標記<br>${lat}, ${lon}`)
-      .openPopup();
+    tempMarker = L.marker([lat, lng]).addTo(map);
+    tips.innerText = `點擊「加入座標」新增這個點 (${lat.toFixed(6)}, ${lng.toFixed(6)})`;
+    tips.style.display = "block";
+
+    // 點擊暫時標記直接新增
+    tempMarker.on('click', () => addPoint(lat, lng));
   });
+}
 
-  // 新增點位
-function addPoint() {
-  const name = document.getElementById('nameInput').value.trim();
-  let coord = document.getElementById('coordInput').value.trim();
+// 新增點位
+function addPoint(lat, lon) {
+  pointCount++;
+  const name = `地點${pointCount}`;
 
-  if (!name || !coord) return alert("請輸入完整資訊");
-
-  coord = coord.replace(/[()（）]/g, "").replace(/，/g, ",").replace(/\s+/g, "");
-  const [lat, lon] = coord.split(',').map(x => x.trim());
-  if (!lat || !lon || isNaN(lat) || isNaN(lon)) return alert("請輸入正確格式，例如：24.018417,120.493877");
-
-  points.push({ name, lat, lon });
+  const newPoint = { name, lat, lon };
+  points.push(newPoint);
   renderTable();
   renderMarkers();
 
-  document.getElementById('nameInput').value = '';
-  document.getElementById('coordInput').value = '';
-
-  // ✅ 新增這段：如果目前有勾選顯示線，新增點後自動更新線
-  if (document.getElementById('showLineCheckbox')?.checked) {
-    drawLine();
+  if (firstAdd) {
+    map.setView([lat, lon], 16);
+    firstAdd = false;
   }
+
+  // 移除暫時標記與提示
+  if (tempMarker) {
+    map.removeLayer(tempMarker);
+    tempMarker = null;
+  }
+  document.getElementById("tips").style.display = "none";
 }
 
-  // 顯示表格
-  function renderTable() {
-    const tbody = document.querySelector('#pointTable tbody');
-    tbody.innerHTML = '';
-
-    points.forEach((p, i) => {
-      const coordText = `${p.lat},${p.lon}`;
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
-        <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
-        <td>
-          <button onclick="editCoord(${i})">修改座標</button>
-          <button onclick="deletePoint(${i})">刪除</button>
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
-
-  // 更新名稱
-  function updatePoint(index, key, value) {
-    points[index][key] = value.trim();
-    renderMarkers();
-  }
-
-  // 更新經緯度
-  function updateCoord(index, value) {
-    const [lat, lon] = value.split(',').map(x => x.trim());
-    if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
-    points[index].lat = lat;
-    points[index].lon = lon;
-    renderMarkers();
-  }
-
-  // 修改座標按鈕 → 可輸入新座標
-function editCoord(index) {
-  const marker = markers[index];
-  if (!marker) return;
-  if (document.getElementById('showLineCheckbox').checked) drawLine();
-
-
-  // 啟用拖曳
-  marker.dragging.enable();
-  marker.openPopup();
-}
-
-
-  // 刪除資料
-  function deletePoint(index) {
-    if (confirm("確定要刪除這個點嗎？")) {
-      points.splice(index, 1);
-      renderTable();
-      renderMarkers();
-    }
-
-    if (document.getElementById('showLineCheckbox')?.checked) {
-         drawLine();}
-  }
-
-  // 顯示地圖標記
+// 重新渲染地圖標記
 function renderMarkers() {
   markers.forEach(m => map.removeLayer(m));
   markers = [];
 
-  if (points.length === 0) return;
-
-  const bounds = [];
-  points.forEach((p, i) => {
-    const marker = L.marker([p.lat, p.lon], { draggable: false })
-      .bindPopup(`<b>${p.name}</b><br>${p.lat},${p.lon}`)
-      .addTo(map);
-
-    // 🔹 這裡加上拖曳事件
-    marker.on('dragend', function(e) {
-      const latlng = e.target.getLatLng();
-      points[i].lat = latlng.lat.toFixed(6);
-      points[i].lon = latlng.lng.toFixed(6);
-
-      renderTable(); // 更新表格
-      marker.getPopup().setContent(`<b>${points[i].name}</b><br>${points[i].lat},${points[i].lon}`);
-
-      marker.dragging.disable(); // 拖曳結束後鎖定
-
-      // ✅ 如果目前有勾選顯示連線，拖曳後自動更新線
-      if (document.getElementById('showLineCheckbox')?.checked) {
-        drawLine();
-      }
+  points.forEach((p, index) => {
+    const marker = L.marker([p.lat, p.lon], { draggable: true }).addTo(map);
+    marker.bindPopup(`${p.name}<br>(${p.lat.toFixed(6)}, ${p.lon.toFixed(6)})`);
+    marker.on('dragend', (e) => {
+      const { lat, lng } = e.target.getLatLng();
+      points[index].lat = lat;
+      points[index].lon = lng;
+      renderTable();
     });
-
     markers.push(marker);
-    bounds.push([p.lat, p.lon]);
   });
-
-  if (bounds.length > 0) map.fitBounds(bounds, { padding: [50, 50] });
 }
 
-let polyline = null; // 存放連線圖層
+// 重新渲染表格
+function renderTable() {
+  const tbody = document.querySelector('#pointTable tbody');
+  tbody.innerHTML = '';
 
-// 顯示或隱藏連線
-function toggleLine() {
-  const checked = document.getElementById('showLineCheckbox').checked;
-
-  if (checked) {
-    drawLine();
-  } else {
-    if (polyline) {
-      map.removeLayer(polyline);
-      polyline = null;
-    }
-  }
+  points.forEach((p, index) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="text" value="${p.name}" onchange="updateName(${index}, this.value)" /></td>
+      <td>${p.lat.toFixed(6)}, ${p.lon.toFixed(6)}</td>
+      <td>
+        <button onclick="editCoords(${index})">修改座標</button>
+        <button onclick="deletePoint(${index})">刪除</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
 }
 
-// 畫線
-function drawLine() {
-  if (polyline) map.removeLayer(polyline);
-
-  if (points.length < 2) return; // 少於兩點無法連線
-
-  const latlngs = points.map(p => [p.lat, p.lon]);
-  polyline = L.polyline(latlngs, { color: 'red', weight: 3 }).addTo(map);
+// 修改名稱
+function updateName(index, newName) {
+  points[index].name = newName.trim() || `地點${index + 1}`;
+  renderMarkers();
 }
 
+// 修改座標
+function editCoords(index) {
+  const input = prompt("請輸入新座標（格式：緯度,經度）", `${points[index].lat},${points[index].lon}`);
+  if (!input) return;
+  const [lat, lon] = input.replace(/[() ]/g, '').split(',').map(Number);
+  if (isNaN(lat) || isNaN(lon)) return alert("格式錯誤，請輸入緯度,經度");
+  points[index].lat = lat;
+  points[index].lon = lon;
+  renderTable();
+  renderMarkers();
+}
 
-  // 下載 GPX
-  function downloadGPX() {
-    if (points.length === 0) return alert("沒有資料可以下載");
-    
-    let filename = document.getElementById('gpxnameInput').value.trim();
-    if (!filename) filename = "points";
-    if (!filename.toLowerCase().endsWith('.gpx')) filename += '.gpx';
+// 刪除點位
+function deletePoint(index) {
+  points.splice(index, 1);
+  renderTable();
+  renderMarkers();
+}
 
-    let gpx = `<?xml version="1.0" encoding="utf-8" standalone="yes"?>\n<gpx version="1.1" creator="GPX Editor" xmlns="http://www.topografix.com/GPX/1/1">\n`;
-    points.forEach(p => {
-      gpx += `  <wpt lat="${p.lat}" lon="${p.lon}"><name><![CDATA[${p.name}]]></name></wpt>\n`;
-    });
-    gpx += `</gpx>`;
+window.onload = initMap;
 
-    const blob = new Blob([gpx], { type: "application/gpx+xml" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
   </script>
 </body>
 </html>
