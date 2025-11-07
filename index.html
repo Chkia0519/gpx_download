@@ -72,20 +72,28 @@
   }).addTo(map);
 
   // 點擊地圖 → 顯示暫時標記 + 加入按鈕
-  map.on('click', function(e) {
-    const lat = e.latlng.lat.toFixed(6);
-    const lon = e.latlng.lng.toFixed(6);
-    document.getElementById('coordInput').value = `${lat},${lon}`;
+    
+ map.on('click', function(e) {
+  const lat = e.latlng.lat.toFixed(6);
+  const lon = e.latlng.lng.toFixed(6);
+  document.getElementById('coordInput').value = `${lat},${lon}`;
 
-    if (tempMarker) map.removeLayer(tempMarker);
+  // 清除舊的暫時標記
+  if (tempMarker) map.removeLayer(tempMarker);
 
-    tempMarker = L.marker([lat, lon]).addTo(map)
-      .bindPopup(`<b>暫時標記</b><br>${lat}, ${lon}<br><button onclick="confirmAddPoint(${lat},${lon})">加入座標</button>`)
-      .openPopup();
+  // 建立新暫時標記 + popup 含修改按鈕
+  tempMarker = L.marker([lat, lon]).addTo(map);
 
-    tips.style.display = 'inline'; // 有暫時座標才顯示提示
-  });
+  const popupContent = `
+    <div style="text-align:center;">
+      <b>暫時標記</b><br>${lat}, ${lon}<br>
+      <button onclick="useThisCoord(${lat}, ${lon})" style="margin-top:5px;">使用這個座標</button>
+    </div>
+  `;
 
+  tempMarker.bindPopup(popupContent).openPopup();
+});
+    
   // 確認新增點
   function confirmAddPoint(lat, lon) {
     pointCount++;
@@ -158,6 +166,16 @@
     renderMarkers();
   }
 
+    function useThisCoord(lat, lon) {
+  // 把暫時標記的座標填回輸入框
+  document.getElementById('coordInput').value = `${lat},${lon}`;
+  
+  // 關閉 popup
+  if (tempMarker) tempMarker.closePopup();
+
+  alert("已選取座標，可直接輸入名稱後點『新增點位』");
+  }
+    
   function updateCoord(index, value) {
     const [lat, lon] = value.split(',').map(x => x.trim());
     if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
@@ -167,12 +185,39 @@
   }
 
   function editCoord(index) {
-    const marker = markers[index];
-    if (!marker) return;
-    marker.dragging.enable();
-    marker.openPopup();
+  alert("請在地圖上點新的位置，並按泡泡框中的『使用這個座標』");
+  
+  // 暫時開啟一個一次性的地圖點擊事件
+  function chooseNewLocation(e) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lon = e.latlng.lng.toFixed(6);
+    
+    if (tempMarker) map.removeLayer(tempMarker);
+    tempMarker = L.marker([lat, lon]).addTo(map);
+    tempMarker.bindPopup(`
+      <div style="text-align:center;">
+        <b>新座標</b><br>${lat}, ${lon}<br>
+        <button onclick="confirmNewCoord(${index}, ${lat}, ${lon})">套用到第 ${index+1} 點</button>
+      </div>
+    `).openPopup();
+
+    // 用完就移除事件監聽
+    map.off('click', chooseNewLocation);
   }
 
+  map.on('click', chooseNewLocation);
+}
+
+function confirmNewCoord(index, lat, lon) {
+  points[index].lat = lat;
+  points[index].lon = lon;
+  renderTable();
+  renderMarkers();
+
+  if (tempMarker) map.removeLayer(tempMarker);
+
+  if (document.getElementById('showLineCheckbox')?.checked) drawLine();
+}
   function deletePoint(index) {
     if (confirm("確定要刪除這個點嗎？")) {
       points.splice(index, 1);
