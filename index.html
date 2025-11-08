@@ -39,6 +39,7 @@
       <input type="checkbox" id="showLineCheckbox" onchange="toggleLine()"> 顯示點位連線
     </label>
     <span id="tips">點擊地圖以加入座標</span>
+    <span  style="display:none" id ="uptips">修改座標時可拖曳地圖上的標記修改座標，拖曳完成後會自動鎖定</span>
   </div>
 
   <div id="map"></div>
@@ -57,34 +58,40 @@
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
   <script>
   let points = [];
   let markers = [];
   let tempMarker = null;
   let polyline = null;
   let pointCount = 0; // 自動編號用
+  let isEditing = false;
 
+  const uptips = document.getElementById('uptips');
   const tips = document.getElementById('tips');
   const map = L.map('map').setView([23.9739, 120.9820], 7);
+
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap 貢獻者'
   }).addTo(map);
 
   // 點擊地圖 → 顯示暫時標記 + 加入按鈕
-  map.on('click', function(e) {
-    const lat = e.latlng.lat.toFixed(6);
-    const lon = e.latlng.lng.toFixed(6);
-    document.getElementById('coordInput').value = `${lat},${lon}`;
+ map.on('click', function(e) {
+  if (isEditing) return;   // ★ 修改座標時禁用新增模式
 
-    if (tempMarker) map.removeLayer(tempMarker);
+  const lat = e.latlng.lat.toFixed(6);
+  const lon = e.latlng.lng.toFixed(6);
+  document.getElementById('coordInput').value = `${lat},${lon}`;
 
-    tempMarker = L.marker([lat, lon]).addTo(map)
-      .bindPopup(`<b>暫時標記</b><br>${lat}, ${lon}<br><button onclick="confirmAddPoint(${lat},${lon})">加入座標</button>`)
-      .openPopup();
+  if (tempMarker) map.removeLayer(tempMarker);
 
-    tips.style.display = 'inline'; // 有暫時座標才顯示提示
-  });
+  tempMarker = L.marker([lat, lon]).addTo(map)
+    .bindPopup(`<b>暫時標記</b><br>${lat}, ${lon}<br><button onclick="confirmAddPoint(${lat},${lon})">加入座標</button>`)
+    .openPopup();
+
+  tips.style.display = 'inline';
+});
 
   // 確認新增點
   function confirmAddPoint(lat, lon) {
@@ -173,6 +180,31 @@
     marker.openPopup();
   }
 
+function startEditCoord(index) {
+  const marker = markers[index];
+
+  if (!marker) return;
+
+  isEditing = true;   // ★ 開始修改模式
+  uptips.style.display = 'inline';
+  marker.dragging.enable();
+  marker.openPopup();
+
+  marker.once("dragend", function (e) {
+    const latlng = e.target.getLatLng();
+    points[index].lat = latlng.lat.toFixed(6);
+    points[index].lon = latlng.lng.toFixed(6);
+
+    renderTable();
+    marker.dragging.disable();
+
+    isEditing = false; // ★ 結束修改模式
+    uptips.style.display = 'none';
+
+    if (document.getElementById('showLineCheckbox').checked) drawLine();
+
+  });
+}
   function deletePoint(index) {
     if (confirm("確定要刪除這個點嗎？")) {
       points.splice(index, 1);
@@ -182,32 +214,51 @@
     }
   }
 
-  function renderMarkers() {
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
+function renderMarkers() {
+  markers.forEach(m => map.removeLayer(m));
+  markers = [];
 
-    if (points.length === 0) return;
+  if (points.length === 0) return;
 
-    const bounds = [];
-    points.forEach((p, i) => {
-      const marker = L.marker([p.lat, p.lon], { draggable: false })
-        .bindPopup(`<b>${p.name}</b><br>${p.lat},${p.lon}`)
-        .addTo(map);
+  points.forEach((p, i) => {
 
-      marker.on('dragend', function(e) {
-        const latlng = e.target.getLatLng();
-        points[i].lat = latlng.lat.toFixed(6);
-        points[i].lon = latlng.lng.toFixed(6);
-        renderTable();
-        marker.getPopup().setContent(`<b>${points[i].name}</b><br>${points[i].lat},${points[i].lon}`);
-        marker.dragging.disable();
-        if (document.getElementById('showLineCheckbox').checked) drawLine();
-      });
+    function buildPopupHTML(index) {
+      return `
+        <b>${points[index].name}</b><br>${points[index].lat}, ${points[index].lon}<br>
+        <button onclick="startEditCoord(${index})" style="margin-top:5px;">修改座標</button>
+        <button onclick="deletePoint(${index})" style="margin-left:5px; color:red;">刪除</button>
+      `;
+    }
 
-      markers.push(marker);
-      bounds.push([p.lat, p.lon]);
-    });
-  }
+    const marker = L.marker([p.lat, p.lon], { draggable: false })
+      .bindPopup(buildPopupHTML(i))
+      .addTo(map);
+
+    marker.on("dragend", function (e) {
+  const latlng = e.target.getLatLng();
+  points[i].lat = latlng.lat.toFixed(6);
+  points[i].lon = latlng.lng.toFixed(6);
+
+  renderTable();
+
+  // 1. 先關閉 popup（舊內容）
+  marker.closePopup();
+
+  // 2. 更新 popup 內容
+  marker.unbindPopup(); 
+  marker.bindPopup(buildPopupHTML(i));
+
+  // 3. 再關一次（避免 Leaflet 的延遲 popup）
+  setTimeout(() => marker.closePopup(), 10);
+
+  marker.dragging.disable();
+
+  if (document.getElementById('showLineCheckbox').checked) drawLine();
+});
+
+    markers.push(marker);
+  });
+}
 
   function toggleLine() {
     if (document.getElementById('showLineCheckbox').checked) {
