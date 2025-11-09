@@ -55,6 +55,7 @@
     <label>檔案名稱：</label>
     <input type="text" id="gpxnameInput" placeholder="請輸入檔名">
     <button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
+    <button onclick="downloadJoystickGPX()">下載 Joystick GPX</button>
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -292,6 +293,32 @@ function renderMarkers() {
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     a.click();
+  }
+
+  function downloadJoystickGPX() {
+    if (points.length === 0) return alert("沒有資料可以下載");
+  
+    let filename = document.getElementById('gpxnameInput').value.trim() || "joystick";
+    if (!filename.toLowerCase().endsWith('.gpx')) filename += '.gpx';
+  
+    let gpx = `<?xml version="1.0" encoding="UTF-8"?>\n`;
+    gpx += `<gpx version="1.1" creator="GPS JoyStick - gpsjoystick@gmail.com - https://www.facebook.com/gpsjoystick">\n`;
+    gpx += `  <rte>\n`;
+  
+    points.forEach(p => {
+      gpx += `    <rtept lat="${p.lat}" lon="${p.lon}"></rtept>\n`;
+    });
+  
+    gpx += `  </rte>\n`;
+    gpx += `</gpx>`;
+  
+    const blob = new Blob([gpx], { type: "application/gpx+xml" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
   </script>
 </body>
