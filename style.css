@@ -4,7 +4,7 @@
   padding: 6px;
   text-align: center;
 }
-#tableWrapper {
+#tableContainer {
   max-height: 300px;   /* 約可顯示 10 筆，可自行調整 */
   overflow-y: auto;    /* 超出時出現滾動條 */
   margin-top: 10px;
