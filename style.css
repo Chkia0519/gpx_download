@@ -27,7 +27,7 @@ body {
 
 /* 其他設定 */
 #map {
-    height: 500px;
+    height: 500px !important;
     margin-top: 15px;
     border-radius: 8px;
     position: relative;
