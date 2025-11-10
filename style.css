@@ -4,7 +4,13 @@
   padding: 6px;
   text-align: center;
 }
-
+#tableWrapper {
+  max-height: 300px;   /* 約可顯示 10 筆，可自行調整 */
+  overflow-y: auto;    /* 超出時出現滾動條 */
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
 #pointTable {
     margin-top: 10px;
     border-collapse: collapse;
