@@ -321,6 +321,9 @@ function renderMarkers() {
     a.click();
     URL.revokeObjectURL(url);
   }
+    setTimeout(() => {
+  map.invalidateSize();
+}, 300);
   </script>
 </body>
 </html>
