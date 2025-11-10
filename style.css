@@ -26,7 +26,12 @@ body {
 }
 
 /* 其他設定 */
-#map { height: 500px; margin: 10px 0; }
+#map {
+    height: 500PX;
+    margin-top: 15px;
+    border-radius: 8px;
+    position: relative;
+    z-index: 0;}
 #tips { color: #666; margin-left: 10px; display: none; }
 #mapControls { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
 
