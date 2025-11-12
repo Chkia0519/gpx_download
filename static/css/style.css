@@ -4,12 +4,45 @@
   align-items: center;         /* 垂直置中 */
 }
 
-
-#biglogo{
-	height : 100px;
-	display: block;
+#tableContainer {
+  max-height: 300px;  /* 顯示大約 10 筆資料 */
+  overflow-y: auto;   /* 超過高度就顯示滾動條 */
+  margin-top: 10px;
 }
 
+#pointTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;        /* 關鍵 2：避免寬度撐開 */
+}
+
+#biglogo{
+  height : 100px;
+  display: block;
+}
+
+/* 隱藏原始的 file input */
+#gpxname input[type="file"] {
+  display: none;
+}
+
+/* 讓 label 看起來像按鈕 */
+#gpxname .import-btn {
+  margin-left:5px;
+  background-color: #007bff;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: inline-block;
+  font-size: 13.33px;
+}
+
+/* hover 效果 */
+#gpxname .import-btn:hover {
+  background-color: #0056b3;
+}
 
 #nameInput,
 #coordInput,
@@ -38,10 +71,11 @@
 #nameloco,
 #gpxname{
   background-color: rgba(255, 255, 255, 0.8); /* 半透明 */
-  padding: 20px;
+  padding:  20px;
   border-radius: 10px; /* 圓角 */
   margin-top: 15PX;
   }
+
 
 
 #mapControls {
@@ -65,9 +99,11 @@
   color: #333;
 }
 
-#tips {
+/* 右邊的提示文字 */
+#tips,
+#uptips{
   font-size: 14px;
-  color: #960000;
+  color: #555;
   text-align: right;
 }
 
@@ -109,6 +145,7 @@ body::before {
 }
 
 button {
+  margin-left:5px;
   background-color: #007bff;
   color: white;
   border: none;
@@ -116,6 +153,7 @@ button {
   padding: 10px 16px;
   cursor: pointer;
   transition: background 0.2s;
+  font-family: "Noto Sans TC";
 }
 button:hover {
   background-color: #0056b3;
@@ -129,7 +167,7 @@ button:hover {
 #biglogo {
     height: 70PX;
     display: block;
-	}
+  }
 #nameInput,
 #coordInput,
 #gpxnameInput{
