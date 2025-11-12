@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GPX 編輯與下載工具</title>
-  <link rel="icon" href="favicon2.ico" type="image/x-icon">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="static/css/style.css">
+
   <style>#map{height:500px; margin-top:15px; border-radius:8px; position:relative; z-index:0;}</style>
 </head>
 
@@ -52,15 +53,22 @@
     <tbody id="pointTableBody"></tbody>
   </table>
 </div>
+
+
+
   
   <div id="gpxname">
+
     <label>檔案名稱：</label>
     <input type="text" id="gpxnameInput" placeholder="請輸入檔名">
     <button id="downloadBtn" onclick="downloadGPX()">下載 GPX</button>
+    <label for="gpxFileInput" class="import-btn">匯入 GPX </label>
+    <input type="file" id="gpxFileInput" accept=".gpx" /> 
     <!-- <button onclick="downloadJoystickGPX()">下載 Joystick GPX</button> 好像暫時不需要他-->
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-gpx"></script> <!--載入gpx的外掛-->
 
   <script>
   let points = [];
@@ -69,6 +77,7 @@
   let polyline = null;
   let pointCount = 0; // 自動編號用
   let isEditing = false;
+  let allowAdd = true; // 是否允許手動新增（匯入時會暫時關閉）
 
   const uptips = document.getElementById('uptips');
   const tips = document.getElementById('tips');
@@ -81,6 +90,8 @@
 
   // 點擊地圖 → 顯示暫時標記 + 加入按鈕
  map.on('click', function(e) {
+  if (!allowAdd) return; // ❗ 匯入時不顯示提示
+
   if (isEditing) return;   // ★ 修改座標時禁用新增模式
 
   const lat = e.latlng.lat.toFixed(6);
@@ -89,11 +100,12 @@
 
   if (tempMarker) map.removeLayer(tempMarker);
 
-  tempMarker = L.marker([lat, lon]).addTo(map)
-    .bindPopup(`<b>暫時標記</b><br>${lat}, ${lon}<br><button onclick="confirmAddPoint(${lat},${lon})">加入座標</button>`)
-    .openPopup();
+    tempMarker = L.marker([lat, lon]).addTo(map)
+      .bindPopup(`<b>暫時標記</b><br>${lat}, ${lon}<br><button onclick="confirmAddPoint(${lat},${lon})">加入座標</button>`)
+      .openPopup();
 
-  tips.style.display = 'inline';
+     // 顯示提示（但只有允許新增時）
+  if (tips) tips.style.display = 'inline';
 });
 
   // 確認新增點
@@ -183,6 +195,16 @@
     marker.openPopup();
   }
 
+  //編輯名稱
+  function editPointName(index) {
+  const newName = prompt("請輸入新的名稱：", points[index].name);
+  if (newName !== null && newName.trim() !== "") {
+    points[index].name = newName.trim();
+    renderTable();
+    renderMarkers(); // 重新更新地圖顯示
+  }
+}
+
 function startEditCoord(index) {
   const marker = markers[index];
 
@@ -224,10 +246,11 @@ function renderMarkers() {
   if (points.length === 0) return;
 
   points.forEach((p, i) => {
-
+    //彈出視窗會顯示
     function buildPopupHTML(index) {
       return `
         <b>${points[index].name}</b><br>${points[index].lat}, ${points[index].lon}<br>
+        <button onclick="editPointName(${index})" style="margin-top:5px;">修改名稱</button>
         <button onclick="startEditCoord(${index})" style="margin-top:5px;">修改座標</button>
         <button onclick="deletePoint(${index})" style="margin-left:5px; color:red;">刪除</button>
       `;
@@ -238,30 +261,40 @@ function renderMarkers() {
       .addTo(map);
 
     marker.on("dragend", function (e) {
-  const latlng = e.target.getLatLng();
-  points[i].lat = latlng.lat.toFixed(6);
-  points[i].lon = latlng.lng.toFixed(6);
+      const latlng = e.target.getLatLng();
+      points[i].lat = latlng.lat.toFixed(6);
+      points[i].lon = latlng.lng.toFixed(6);
 
-  renderTable();
+      renderTable();
 
-  // 1. 先關閉 popup（舊內容）
-  marker.closePopup();
+      // 1. 先關閉 popup（舊內容）
+      marker.closePopup();
 
-  // 2. 更新 popup 內容
-  marker.unbindPopup(); 
-  marker.bindPopup(buildPopupHTML(i));
+      // 2. 更新 popup 內容
+      marker.unbindPopup(); 
+      marker.bindPopup(buildPopupHTML(i));
 
-  // 3. 再關一次（避免 Leaflet 的延遲 popup）
-  setTimeout(() => marker.closePopup(), 10);
+      // 3. 再關一次（避免 Leaflet 的延遲 popup）
+      setTimeout(() => marker.closePopup(), 10);
 
-  marker.dragging.disable();
+      marker.dragging.disable();
 
-  if (document.getElementById('showLineCheckbox').checked) drawLine();
-});
+      if (document.getElementById('showLineCheckbox').checked) drawLine();
+    });
 
-    markers.push(marker);
-  });
+        markers.push(marker);
+      });
+    }
+    // ✅ 新增這段：修改名稱的功能
+function editPointName(index) {
+  const newName = prompt("請輸入新的名稱：", points[index].name);
+  if (newName !== null && newName.trim() !== "") {
+    points[index].name = newName.trim();
+    renderTable();    // 更新表格
+    renderMarkers();  // 重新畫地圖
+  }
 }
+
 
   function toggleLine() {
     if (document.getElementById('showLineCheckbox').checked) {
@@ -273,6 +306,7 @@ function renderMarkers() {
       }
     }
   }
+
 
   function drawLine() {
     if (polyline) map.removeLayer(polyline);
@@ -325,6 +359,80 @@ function renderMarkers() {
     setTimeout(() => {
   map.invalidateSize();
 }, 300);
+
+// 匯入 GPX 並自動轉換成 wpt
+document.getElementById('gpxFileInput').addEventListener('change', function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+    allowAdd = false; // 匯入時不允許手動新增
+  if (tempMarker) {
+    map.removeLayer(tempMarker);
+    tempMarker = null;
+  }
+  if (tips) tips.style.display = 'none'; // 🔹 隱藏提示
+
+  const reader = new FileReader();  
+
+  reader.onload = function(e) {
+    let gpxData = e.target.result;
+
+    // 判斷是否是 rtept
+    if (gpxData.includes("<rtept")) {
+      console.log("偵測到 <rtept>，自動轉換為 <wpt>");
+      gpxData = gpxData
+        .replace(/<rtept/g, "<wpt")
+        .replace(/<\/rtept>/g, "</wpt>");
+      // 同時也移除 <rte> 區塊包裹（以免干擾）
+      gpxData = gpxData.replace(/<rte[^>]*>/g, "").replace(/<\/rte>/g, "");
+    }
+
+    // 清空原本資料
+    points = [];
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    if (polyline) {
+      map.removeLayer(polyline);
+      polyline = null;
+    }
+
+    // 使用 DOMParser 解析 GPX
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(gpxData, "text/xml");
+    const wptNodes = xmlDoc.getElementsByTagName("wpt");
+
+    if (wptNodes.length === 0) {
+      alert("GPX 檔案中沒有可用的點位（wpt 或 rtept）");
+      return;
+    }
+
+    // 讀取所有座標點
+    for (let i = 0; i < wptNodes.length; i++) {
+      const wpt = wptNodes[i];
+      const lat = wpt.getAttribute("lat");
+      const lon = wpt.getAttribute("lon");
+      let name = "點位 " + (i + 1);
+      const nameNode = wpt.getElementsByTagName("name")[0];
+      if (nameNode && nameNode.textContent.trim() !== "") {
+        name = nameNode.textContent.trim();
+      }
+      points.push({ name, lat, lon });
+    }
+
+    // 渲染地圖與表格
+    renderTable();
+    renderMarkers();
+
+    allowAdd = true; // 匯入完再允許手動新增
+
+    // 調整地圖視野
+    const latlngs = points.map(p => [p.lat, p.lon]);
+    const bounds = L.latLngBounds(latlngs);
+    map.fitBounds(bounds);
+  };
+
+  reader.readAsText(file);
+});
+
   </script>
 </body>
 </html>
