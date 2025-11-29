@@ -168,7 +168,7 @@
     const row = document.createElement('tr');
     row.innerHTML = `
       <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
-      <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
+      <td>${coordText}</td>
       <td>
         <button onclick="startEditCoord(${i})">修改座標</button>
         <button onclick="moveUp(${i})">▲</button>
