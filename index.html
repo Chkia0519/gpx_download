@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GPX 編輯與下載工具</title>
-  <link rel="icon" href="favicon2.ico" type="image/x-icon">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <link rel="stylesheet" href="static/css/style.css">
 
@@ -69,6 +69,7 @@
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-gpx"></script> <!--載入gpx的外掛-->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script> <!--載入gpx的外掛-->
 
   <script>
   let points = [];
@@ -127,6 +128,8 @@
     }
 
     if (document.getElementById('showLineCheckbox').checked) drawLine();
+    document.getElementById('nameInput').value = '';
+    document.getElementById('coordInput').value = '';
   }
 
   // 新增點位（手動）
@@ -157,23 +160,39 @@
   }
 
   function renderTable() {
-    const tbody = document.querySelector('#pointTable tbody');
-    tbody.innerHTML = '';
+  const tbody = document.querySelector('#pointTable tbody');
+  tbody.innerHTML = '';
 
-    points.forEach((p, i) => {
-      const coordText = `${p.lat},${p.lon}`;
-      const row = document.createElement('tr');
-      row.innerHTML = `
-        <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
-        <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
-        <td>
-          <button onclick="editCoord(${i})">修改座標</button>
-          <button onclick="deletePoint(${i})">刪除</button>
-        </td>
-      `;
-      tbody.appendChild(row);
-    });
-  }
+  points.forEach((p, i) => {
+    const coordText = `${p.lat},${p.lon}`;
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
+      <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
+      <td>
+        <button onclick="startEditCoord(${i})">修改座標</button>
+        <button onclick="moveUp(${i})">▲</button>
+        <button onclick="moveDown(${i})">▼</button>
+        <button onclick="deletePoint(${i})">刪除</button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  // ★★★ 在這裡加入拖曳排序 ★★★
+  new Sortable(tbody, {
+    animation: 150,
+    handle: 'tr',   // 整列都可以拖曳
+    onEnd: function (evt) {
+      const movedItem = points.splice(evt.oldIndex, 1)[0];
+      points.splice(evt.newIndex, 0, movedItem);
+
+      renderTable();
+      renderMarkers();
+      if (document.getElementById('showLineCheckbox').checked) drawLine();
+    }
+  });
+}
 
   function updatePoint(index, key, value) {
     points[index][key] = value.trim();
@@ -291,6 +310,7 @@ function editPointName(index) {
   if (newName !== null && newName.trim() !== "") {
     points[index].name = newName.trim();
     renderTable();    // 更新表格
+
     renderMarkers();  // 重新畫地圖
   }
 }
@@ -360,6 +380,21 @@ function editPointName(index) {
   map.invalidateSize();
 }, 300);
 
+function moveUp(index) {
+  if (index === 0) return; // 已經是第一個
+  [points[index - 1], points[index]] = [points[index], points[index - 1]];
+  renderTable();
+  renderMarkers();
+  if (document.getElementById('showLineCheckbox').checked) drawLine();
+}
+
+function moveDown(index) {
+  if (index === points.length - 1) return; // 已經是最後一個
+  [points[index], points[index + 1]] = [points[index + 1], points[index]];
+  renderTable();
+  renderMarkers();
+  if (document.getElementById('showLineCheckbox').checked) drawLine();
+}
 // 匯入 GPX 並自動轉換成 wpt
 document.getElementById('gpxFileInput').addEventListener('change', function(event) {
   const file = event.target.files[0];
@@ -401,7 +436,7 @@ document.getElementById('gpxFileInput').addEventListener('change', function(even
     const wptNodes = xmlDoc.getElementsByTagName("wpt");
 
     if (wptNodes.length === 0) {
-      alert("此GPX 檔案無法使用，請聯絡Pocky");
+      alert("GPX 檔案中沒有可用的點位（wpt 或 rtept）");
       return;
     }
 
