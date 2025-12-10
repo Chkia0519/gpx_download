@@ -178,13 +178,15 @@
       <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
       <td>
         <button onclick="startEditCoord(${i})">修改座標</button>
-        <button onclick="moveUp(${i})">▲</button>
-        <button onclick="moveDown(${i})">▼</button>
+       
         <button onclick="deletePoint(${i})">刪除</button>
       </td>
     `;
     tbody.appendChild(row);
   });
+
+  // <button onclick="moveUp(${i})">▲</button>暫時不想用
+  // <button onclick="moveDown(${i})">▼</button>
 
   // ★★★ 在這裡加入拖曳排序 ★★★
   new Sortable(tbody, {
