@@ -7,7 +7,7 @@
 #tableContainer {
   max-height: 300px;  /* 顯示大約 10 筆資料 */
   overflow-y: auto;   /* 超過高度就顯示滾動條 */
-  margin-top: 10px;
+
 }
 
 #pointTable {
@@ -44,6 +44,7 @@
   background-color: #0056b3;
 }
 
+
 #nameInput,
 #coordInput,
 #gpxnameInput{
@@ -77,7 +78,7 @@
   }
 
 
-
+#move,
 #mapControls {
   display: flex;
   justify-content: space-between; /* 左右分散對齊 */
@@ -91,6 +92,7 @@
 }
 
 /* 左邊的 label（勾選框） */
+#move label,
 #mapControls label {
   display: flex;
   align-items: center;
@@ -100,6 +102,7 @@
 }
 
 /* 右邊的提示文字 */
+#tips2,
 #tips,
 #uptips{
   font-size: 14px;
