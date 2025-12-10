@@ -40,6 +40,13 @@
   </div>
 
   <div id="map"></div>
+  
+  <div id="move">
+      <label>
+        <span id="tips3">早安您好，今天種花了嗎</span>
+      </label>
+      <span id="tips2">拖曳操作欄位可排序</span>
+  </div>
 
 <div id="tableContainer">
   <table id="pointTable">
@@ -168,7 +175,7 @@
     const row = document.createElement('tr');
     row.innerHTML = `
       <td contenteditable="true" oninput="updatePoint(${i}, 'name', this.innerText)">${p.name}</td>
-      <td>${coordText}</td>
+      <td contenteditable="true" oninput="updateCoord(${i}, this.innerText)">${coordText}</td>
       <td>
         <button onclick="startEditCoord(${i})">修改座標</button>
         <button onclick="moveUp(${i})">▲</button>
